@@ -2,9 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
-# Dsp_operations
-from dsp_operations import read_signal_file, multiply_signal, add_signals
+from dsp_operations import ReadSignalFile, AddSignals, MultiplySignal
 
 class LightDSPApp:
     def __init__(self, root):
@@ -13,7 +11,7 @@ class LightDSPApp:
         self.root.geometry("1200x780")
         self.root.configure(bg="#f8fafc")  # Light Slate Background
 
-        #  dict(name: (indices, samples))
+        # dict(name: (indices, samples))
         self.signals_dict = {}
         
         self.setup_styles()
@@ -152,7 +150,7 @@ class LightDSPApp:
         file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
         if file_path:
             try:
-                indices, samples = read_signal_file(file_path)
+                indices, samples = ReadSignalFile(file_path)
                 filename = file_path.replace("\\", "/").split("/")[-1]
                 self.signals_dict[filename] = (indices, samples)
                 
@@ -196,8 +194,9 @@ class LightDSPApp:
             messagebox.showwarning("Warning", "Please load at least 2 signals to perform Addition!")
             return
         
+        # تحويل القيم المحفوظة في الـ Dictionary إلى List لنتمكن من جمعها
         signals_data = list(self.signals_dict.values())
-        res_idx, res_sam = add_signals(signals_data)
+        res_idx, res_sam = AddSignals(signals_data)
         self.plot_single(res_idx, res_sam, "Result of Adding Loaded Signals")
 
     def action_multiply(self):
@@ -209,7 +208,8 @@ class LightDSPApp:
         const_val = simpledialog.askfloat("Multiply Constant", f"Enter constant factor for '{selected}':")
         if const_val is not None:
             idx, samples = self.signals_dict[selected]
-            new_samples = multiply_signal(samples, const_val)
+            # تمرير قيم العينات فقط لضربها في الثابت
+            new_samples = MultiplySignal(samples, const_val)
             self.plot_single(idx, new_samples, f"Multiplied: {selected} x {const_val}")
 
     # ------------------ High Quality Light Plotting ------------------

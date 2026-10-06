@@ -194,7 +194,7 @@ class LightDSPApp:
             messagebox.showwarning("Warning", "Please load at least 2 signals to perform Addition!")
             return
         
-        # تحويل القيم المحفوظة في الـ Dictionary إلى List لنتمكن من جمعها
+        
         signals_data = list(self.signals_dict.values())
         res_idx, res_sam = AddSignals(signals_data)
         self.plot_single(res_idx, res_sam, "Result of Adding Loaded Signals")
@@ -208,7 +208,7 @@ class LightDSPApp:
         const_val = simpledialog.askfloat("Multiply Constant", f"Enter constant factor for '{selected}':")
         if const_val is not None:
             idx, samples = self.signals_dict[selected]
-            # تمرير قيم العينات فقط لضربها في الثابت
+           
             new_samples = MultiplySignal(samples, const_val)
             self.plot_single(idx, new_samples, f"Multiplied: {selected} x {const_val}")
 

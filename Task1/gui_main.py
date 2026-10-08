@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from dsp_operations import ReadSignalFile, AddSignals, MultiplySignal
+from dsp_operations import ReadSignalFileM, AddSignals, MultiplySignal
 
 class LightDSPApp:
     def __init__(self, root):
@@ -150,7 +150,7 @@ class LightDSPApp:
         file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt")])
         if file_path:
             try:
-                indices, samples = ReadSignalFile(file_path)
+                indices, samples = ReadSignalFileM(file_path)
                 filename = file_path.replace("\\", "/").split("/")[-1]
                 self.signals_dict[filename] = (indices, samples)
                 
@@ -198,7 +198,7 @@ class LightDSPApp:
         signals_data = list(self.signals_dict.values())
         res_idx, res_sam = AddSignals(signals_data)
         self.plot_single(res_idx, res_sam, "Result of Adding Loaded Signals")
-
+        
     def action_multiply(self):
         selected = self.combo_single.get()
         if not selected or selected not in self.signals_dict:
@@ -282,3 +282,5 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = LightDSPApp(root)
     root.mainloop()
+
+    

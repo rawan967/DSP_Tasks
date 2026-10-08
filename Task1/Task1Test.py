@@ -4,7 +4,8 @@
 # In[ ]:
 
 
-def ReadSignalFile(file_name):
+
+def ReadSignalFile(file_name): 
     expected_indices=[]
     expected_samples=[]
     with open(file_name, 'r') as f:
@@ -32,9 +33,11 @@ def ReadSignalFile(file_name):
 
 def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_samples):
     if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal2.txt'):
-        file_name="" # write here path of signal1+signal2
-    else if(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal3.txt'):
-        file_name="" # write here path of signal1+signal3
+        file_name="./output/Signal1+signal2.txt" # write here path of signal1+signal2
+
+    elif(userFirstSignal=='Signal1.txt' and userSecondSignal=='Signal3.txt'):
+        file_name="./output/Signal1+signal3.txt" # write here path of signal1+signal3
+        
     expected_indices,expected_samples=ReadSignalFile(file_name)          
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
         print("Addition Test case failed, your signal have different length from the expected one")
@@ -57,25 +60,25 @@ def AddSignalSamplesAreEqual(userFirstSignal,userSecondSignal,Your_indices,Your_
 
 def MultiplySignalByConst(User_Const,Your_indices,Your_samples):
     if(User_Const==5):
-        file_name="" # write here path of MultiplySignalByConstant-Signal1 - by 5.txt
-    else if(User_Const==10):
-        file_name="" # write here path of MultiplySignalByConstant-Signal2 - by 10.txt
+        file_name="./output/MultiplySignalByConstant-Signal1 - by 5.txt" 
+    elif(User_Const==10):
+        file_name="./output/MultiplySignalByConstant-Signal2 - by 10.txt" 
         
     expected_indices,expected_samples=ReadSignalFile(file_name)      
     if (len(expected_samples)!=len(Your_samples)) and (len(expected_indices)!=len(Your_indices)):
-        print("Multiply by "+User_Const.str()+ " Test case failed, your signal have different length from the expected one")
+        print("Multiply by "+str(User_Const)+ " Test case failed, your signal have different length from the expected one")
         return
     for i in range(len(Your_indices)):
         if(Your_indices[i]!=expected_indices[i]):
-            print("Multiply by "+User_Const.str()+" Test case failed, your signal have different indicies from the expected one") 
+            print("Multiply by "+str(User_Const)+" Test case failed, your signal have different indicies from the expected one") 
             return
     for i in range(len(expected_samples)):
         if abs(Your_samples[i] - expected_samples[i]) < 0.01:
             continue
         else:
-            print("Multiply by "+User_Const.str()+" Test case failed, your signal have different values from the expected one") 
+            print("Multiply by "+str(User_Const)+" Test case failed, your signal have different values from the expected one") 
             return
-    print("Multiply by "+User_Const.str()+" Test case passed successfully")
+    print("Multiply by "+str(User_Const)+" Test case passed successfully")
 
 
 # In[ ]:

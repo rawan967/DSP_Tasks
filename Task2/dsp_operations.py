@@ -1,4 +1,4 @@
-
+#DSP Operations
 def ReadSignalFileM(file_name):
     indices = []
     samples = []
@@ -118,6 +118,73 @@ print(NormalizeSignal(samples, "0_to_1"))
 
 print(NormalizeSignal(samples, "-1_to_1"))
 # [-0.333..., 0.333..., 1.0, -1.0]
+#===================Quantization========================
+import math
+
+
+def Quantization(signal, num_bits=None, num_levels=None):
+
+    if num_levels is None:
+        if num_bits is None:
+            raise ValueError("Specify num_bits or num_levels")
+
+        num_levels = 2 ** num_bits
+
+    if num_levels <= 0:
+        raise ValueError("Number of levels must be positive")
+
+    if not signal:
+        return [], [], [], []
+
+    minimum = min(signal)
+    maximum = max(signal)
+
+    delta = (maximum - minimum) / num_levels
+
+    bits = math.ceil(math.log2(num_levels))
+
+    interval_indices = []
+    encoded_values = []
+    quantized_values = []
+    sampled_errors = []
+
+    if delta == 0:
+        for sample in signal:
+            interval_indices.append(0)
+            encoded_values.append("0" * bits)
+            quantized_values.append(sample)
+            sampled_errors.append(0.0)
+
+        return (
+            interval_indices,
+            encoded_values,
+            quantized_values,
+            sampled_errors
+        )
+
+    for sample in signal:
+
+        index = math.ceil((sample - minimum) / delta) - 1
+
+        index = max(0, min(index, num_levels - 1))
+
+        quantized_value = minimum + (index + 0.5) * delta
+
+        encoded_value = format(index, f"0{bits}b")
+
+        error = quantized_value - sample
+
+        interval_indices.append(index)
+        encoded_values.append(encoded_value)
+        quantized_values.append(round(quantized_value, 4))
+        sampled_errors.append(round(error, 4))
+
+    return (
+        interval_indices,
+        encoded_values,
+        quantized_values,
+        sampled_errors
+    )
 # =======================================================
 #                      Testing
 # =======================================================

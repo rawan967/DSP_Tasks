@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 
@@ -12,7 +11,8 @@ from dsp_operations import (
     SubSignals,
     SquaringSignal,
     NormalizeSignal,
-    AccumulationSignal
+    AccumulationSignal,
+    Quantization
 )
 
 
@@ -365,6 +365,43 @@ class LightDSPApp:
             style="Blue.TButton",
             command=self.action_accumulation
         ).pack(fill=tk.X, padx=10, pady=4)
+
+        # ---- Quantization ----
+
+        self.add_section("QUANTIZATION")
+
+        self.quantization_mode = ttk.Combobox(
+            self.sidebar_content,
+            state="readonly",
+            values=["Number of Bits", "Number of Levels"]
+        )
+        self.quantization_mode.set("Number of Bits")
+        self.quantization_mode.pack(
+            fill=tk.X,
+            padx=10,
+            pady=4
+        )
+
+        self.quantization_value = ttk.Entry(
+            self.sidebar_content
+        )
+        self.quantization_value.insert(0, "3")
+        self.quantization_value.pack(
+            fill=tk.X,
+            padx=10,
+            pady=4
+        )
+
+        ttk.Button(
+            self.sidebar_content,
+            text="Quantize Signal",
+            style="Purple.TButton",
+            command=self.action_quantization
+        ).pack(
+            fill=tk.X,
+            padx=10,
+            pady=4
+        )
 
         # Clear visualization
         ttk.Button(
@@ -747,6 +784,75 @@ class LightDSPApp:
             messagebox.showerror(
                 "Accumulation Error",
                 str(error)
+            )
+
+    # ================== QUANTIZATION ==================
+
+    def action_quantization(self):
+        selected = self.get_selected_signal()
+
+        if selected is None:
+            return
+
+        name, (indices, samples) = selected
+
+        mode = self.quantization_mode.get()
+        value_text = self.quantization_value.get().strip()
+
+        try:
+            value = int(value_text)
+
+            if value <= 0:
+                raise ValueError("Enter a positive integer.")
+
+            if mode == "Number of Bits":
+                if value > 20:
+                    raise ValueError("Number of bits must not exceed 20.")
+
+                interval_indices, encoded, quantized, errors = (
+                    Quantization(samples, num_bits=value)
+                )
+            else:
+                interval_indices, encoded, quantized, errors = (
+                    Quantization(samples, num_levels=value)
+                )
+
+            result_text = (
+                f"Signal: {name}\n"
+                f"Number of samples: {len(samples)}\n\n"
+                "Index | Encoded | Quantized Value | Quantization Error\n"
+                + "-" * 48 + "\n"
+            )
+
+            for i in range(len(samples)):
+                result_text += (
+                    f"{indices[i]} | "
+                    f"{encoded[i]} | "
+                    f"{quantized[i]} | "
+                    f"{errors[i]}\n"
+                )
+
+            messagebox.showinfo(
+                "Quantization Results",
+                result_text
+            )
+
+            self.plot_single(
+                indices,
+                quantized,
+                f"Quantized Signal: {name}"
+            )
+
+        except ValueError as error:
+            messagebox.showerror(
+                "Quantization Error",
+                str(error)
+            )
+
+        except Exception as error:
+            messagebox.showerror(
+                "Quantization Error",
+                f"An unexpected error occurred:\n{error}"
             )
 
     # ================== PLOTTING ==================

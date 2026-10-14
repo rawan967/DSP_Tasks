@@ -318,7 +318,7 @@ class LightDSPApp:
 
         # ---- Arithmetic ----
 
-        self.add_section("ARITHMETIC")
+        self.add_section("ARITHMETIC OPERATIONS")
 
         ttk.Button(
             self.sidebar_content,

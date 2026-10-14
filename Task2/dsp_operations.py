@@ -1,22 +1,25 @@
-#DSP Operations
+"""DSP operations for Task 1 and Task 2."""
+import math
+
+
 def ReadSignalFileM(file_name):
     indices = []
     samples = []
 
-    with open(file_name, 'r') as f:
-        f.readline()
-        f.readline()
-        f.readline()
-        line = f.readline()
+    with open(file_name, "r", encoding="utf-8") as file:
+        # Signal files have three header lines.
+        for _ in range(3):
+            next(file, None)
 
-        while line:
-            values = line.strip().split()
+        for line in file:
+            values = line.split()
             if len(values) == 2:
-                index = int(values[0])
-                sample = float(values[1])
-                indices.append(index)
-                samples.append(sample)
-            line = f.readline()
+                try:
+                    indices.append(int(values[0]))
+                    samples.append(float(values[1]))
+                except ValueError:
+                    # Ignore non-data/footer lines.
+                    continue
 
     return indices, samples
 
@@ -25,122 +28,106 @@ def AddSignals(signals_data):
     if not signals_data:
         return [], []
 
-    result_indices = signals_data[0][0][:]
-    result_samples = [0.0] * len(result_indices)
+    indices = signals_data[0][0][:]
+    if any(signal_indices != indices for signal_indices, _ in signals_data):
+        raise ValueError("All signals must have matching indices.")
 
-    for indices, samples in signals_data:
-        for i in range(len(samples)):
-            if i < len(result_samples):
-                result_samples[i] += samples[i]
+    if any(len(samples) != len(indices) for _, samples in signals_data):
+        raise ValueError("Each signal must have the same number of indices and samples.")
 
-    return result_indices, result_samples
+    result = [0.0] * len(indices)
+    for _, samples in signals_data:
+        for i, sample in enumerate(samples):
+            result[i] += sample
+
+    return indices, result
 
 
 def MultiplySignal(samples, constant):
-    result_samples = []
+    return [sample * constant for sample in samples]
 
-    for sample in samples:
-        result_samples.append(sample * constant)
-
-    return result_samples
 
 def SubSignals(signals):
+    """Calculate the absolute difference between signals."""
     if len(signals) < 2:
-        raise ValueError("At least two signals are required")
+        raise ValueError("At least two signals are required.")
 
-    indices, result_samples = signals[0]
+    indices = signals[0][0][:]
+    result = signals[0][1][:]
 
-    result_samples = result_samples.copy()
+    if len(indices) != len(result):
+        raise ValueError("Invalid signal data.")
 
     for current_indices, current_samples in signals[1:]:
-        if indices != current_indices:
-            raise ValueError("Signals must have matching indices")
+        if current_indices != indices:
+            raise ValueError("Signals must have matching indices.")
 
-        for i in range(len(result_samples)):
-            result_samples[i] = abs(result_samples[i] - current_samples[i])
+        if len(current_samples) != len(result):
+            raise ValueError("Signals must have matching lengths.")
 
-    return indices[:], result_samples
+        for i, sample in enumerate(current_samples):
+            result[i] = abs(result[i] - sample)
+
+    return indices, result
+
 
 def SquaringSignal(samples):
-    result_samples = []
-    for sample in samples:
-        result_samples.append(sample ** 2)
+    return [sample ** 2 for sample in samples]
 
-    return result_samples
 
 def NormalizeSignal(samples, target_range):
+    if target_range not in ("0_to_1", "-1_to_1"):
+        raise ValueError("Invalid normalization range. Use '0_to_1' or '-1_to_1'.")
+
     if not samples:
         return []
 
-    min_value = min(samples)
-    max_value = max(samples)
+    minimum = min(samples)
+    maximum = max(samples)
 
-    if max_value == min_value:
+    if maximum == minimum:
+        # A constant signal cannot be stretched over a range; return zeros.
         return [0.0] * len(samples)
 
-    result_samples = []
-
+    normalized = []
     for sample in samples:
-        if target_range == "0_to_1":
-            value = (sample - min_value) / (max_value - min_value)
+        scaled = (sample - minimum) / (maximum - minimum)
+        if target_range == "-1_to_1":
+            scaled = 2 * scaled - 1
+        normalized.append(scaled)
 
-        elif target_range == "-1_to_1":
-            value = 2 * (sample - min_value) / (max_value - min_value) - 1
-
-        else:
-            raise ValueError("Invalid normalization range")
-
-        result_samples.append(value)
-
-    return result_samples
+    return normalized
 
 
 def AccumulationSignal(samples):
-    result_samples = []
-    accumulated_value = 0.0
+    result = []
+    running_total = 0.0
 
     for sample in samples:
-        accumulated_value += sample
-        result_samples.append(accumulated_value)
+        running_total += sample
+        result.append(running_total)
 
-    return result_samples
-
-samples = [2, 3, 4, 1]
-
-print(SquaringSignal(samples))
-# [4, 9, 16, 1]
-
-print(AccumulationSignal(samples))
-# [2.0, 5.0, 9.0, 10.0]
-
-print(NormalizeSignal(samples, "0_to_1"))
-# [0.333..., 0.666..., 1.0, 0.0]
-
-print(NormalizeSignal(samples, "-1_to_1"))
-# [-0.333..., 0.333..., 1.0, -1.0]
-#===================Quantization========================
-import math
+    return result
 
 
 def Quantization(signal, num_bits=None, num_levels=None):
-
+    """Return interval numbers (1-based), binary codes, quantized samples and errors."""
     if num_levels is None:
         if num_bits is None:
-            raise ValueError("Specify num_bits or num_levels")
-
+            raise ValueError("Specify num_bits or num_levels.")
+        if not isinstance(num_bits, int) or isinstance(num_bits, bool) or num_bits <= 0:
+            raise ValueError("Number of bits must be a positive integer.")
         num_levels = 2 ** num_bits
 
-    if num_levels <= 0:
-        raise ValueError("Number of levels must be positive")
+    if not isinstance(num_levels, int) or isinstance(num_levels, bool) or num_levels <= 0:
+        raise ValueError("Number of levels must be a positive integer.")
 
     if not signal:
         return [], [], [], []
 
     minimum = min(signal)
     maximum = max(signal)
-
     delta = (maximum - minimum) / num_levels
-
     bits = math.ceil(math.log2(num_levels))
 
     interval_indices = []
@@ -150,143 +137,24 @@ def Quantization(signal, num_bits=None, num_levels=None):
 
     if delta == 0:
         for sample in signal:
-            interval_indices.append(0)
-            encoded_values.append("0" * bits)
-            quantized_values.append(sample)
+            interval_indices.append(1)
+            encoded_values.append(format(0, f"0{bits}b"))
+            quantized_values.append(round(sample, 4))
             sampled_errors.append(0.0)
-
-        return (
-            interval_indices,
-            encoded_values,
-            quantized_values,
-            sampled_errors
-        )
+        return interval_indices, encoded_values, quantized_values, sampled_errors
 
     for sample in signal:
+        zero_based_index = math.ceil((sample - minimum) / delta) - 1
+        zero_based_index = max(0, min(zero_based_index, num_levels - 1))
 
-        index = math.ceil((sample - minimum) / delta) - 1
-
-        index = max(0, min(index, num_levels - 1))
-
-        quantized_value = minimum + (index + 0.5) * delta
-
-        encoded_value = format(index, f"0{bits}b")
-
+        quantized_value = minimum + (zero_based_index + 0.5) * delta
+        encoded_value = format(zero_based_index, f"0{bits}b")
         error = quantized_value - sample
 
-        interval_indices.append(index)
+        # Test files use 4 decimal places for the displayed numeric values.
+        interval_indices.append(zero_based_index + 1)
         encoded_values.append(encoded_value)
         quantized_values.append(round(quantized_value, 4))
         sampled_errors.append(round(error, 4))
 
-    return (
-        interval_indices,
-        encoded_values,
-        quantized_values,
-        sampled_errors
-    )
-# =======================================================
-#                      Testing
-# =======================================================
-if __name__ == "__main__":
-    from Task1Test import ReadSignalFile, MultiplySignalByConst, AddSignalSamplesAreEqual, SignalSamplesAreEqual
-
-    try:
-        print("Testing Addition For Signal1 and Signal2:")
-        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
-        ind2, val2 = ReadSignalFileM('../Task1/input/Signal2.txt')
-
-        ind_add, val_add = AddSignals([(ind1, val1), (ind2, val2)])
-        AddSignalSamplesAreEqual('Signal1.txt', 'Signal2.txt', ind_add, val_add)
-
-        print("-----------------------------------------------------------")
-
-        print("Testing Addition For Signal1 and Signal3:")
-        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
-        ind2, val2 = ReadSignalFileM('../Task1/input/Signal3.txt')
-
-        ind_add, val_add = AddSignals([(ind1, val1), (ind2, val2)])
-        AddSignalSamplesAreEqual('Signal1.txt', 'Signal3.txt', ind_add, val_add)
-
-        print("-----------------------------------------------------------")
-
-        print("\nTesting Multiplication by 5:")
-        ind_m, val_m = ReadSignalFileM('../Task1/input/Signal1.txt')
-
-        val_mul = MultiplySignal(val_m, 5) 
-        ind_mul = ind_m  
-        MultiplySignalByConst(5, ind_mul, val_mul)
-
-        print("-----------------------------------------------------------")
-
-        print("\nTesting Multiplication by 10:")
-        ind_m, val_m = ReadSignalFileM('../Task1/input/Signal2.txt')
-
-        val_mul = MultiplySignal(val_m, 10) 
-
-        ind_mul = ind_m  
-        MultiplySignalByConst(10, ind_mul, val_mul)
-        
-    except FileNotFoundError:
-        print("Test skipped: Run the GUI directly, or make sure the './input/' folder exists if you want to run this file alone.")
-
-
-        # -----------------------------------------------------------
-        #                        TASK 2 TESTS
-        # -----------------------------------------------------------
-        
-        # 1. Testing Subtraction
-        print("\nTesting Subtraction (Signal1 - Signal2):")
-        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
-        ind2, val2 = ReadSignalFileM('../Task1/input/Signal2.txt')
-        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
-  
-        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal2.txt", ind_sub, val_sub)
-        print("-----------------------------------------------------------")
-
-        print("\nTesting Subtraction (Signal1 - Signal3):")
-        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
-        ind2, val2 = ReadSignalFileM('../Task1/input/Signal3.txt')
-        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
-    
-        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal3.txt", ind_sub, val_sub)
-        print("-----------------------------------------------------------")
-
-
-        # 2. Testing Squaring
-        print("\nTesting Squaring for Signal1:")
-        ind_sq, val_sq = ReadSignalFileM('../Task1/input/Signal1.txt')
-        val_squared = SquaringSignal(val_sq)
-       
-        SignalSamplesAreEqual("Squaring", "./OUTPUT Arithmetic operations/Output squaring signal 1.txt", ind_sq, val_squared)
-        print("-----------------------------------------------------------")
-
-        # 3. Testing Normalization (0 to 1)
-        print("\nTesting Normalization (0 to 1) for Signal1:")
-        ind_n1, val_n1 = ReadSignalFileM('../Task1/input/Signal2.txt')
-        val_norm1 = NormalizeSignal(val_n1, "0_to_1")
-  
-        SignalSamplesAreEqual("Normalization (0 to 1)", "./OUTPUT Arithmetic operations/normlize signal 2 (from 0 to 1 )-- output.txt", ind_n1, val_norm1)
-        print("-----------------------------------------------------------")
-
-        # 4. Testing Normalization (-1 to 1)
-        print("\nTesting Normalization (-1 to 1) for Signal1:")
-        ind_n2, val_n2 = ReadSignalFileM('../Task1/input/Signal1.txt')
-        val_norm2 = NormalizeSignal(val_n2, "-1_to_1")
-
-        SignalSamplesAreEqual("Normalization (-1 to 1)", "./OUTPUT Arithmetic operations/normalize of signal 1 (from -1 to 1)-- output.txt", ind_n2, val_norm2)
-        print("-----------------------------------------------------------")
-
-        # 5. Testing Accumulation
-        print("\nTesting Accumulation for Signal1:")
-        ind_acc, val_acc = ReadSignalFileM('../Task1/input/Signal1.txt')
-        val_accumulated = AccumulationSignal(val_acc)
-  
-        SignalSamplesAreEqual("Accumulation", "./OUTPUT Arithmetic operations/output accumulation for signal1.txt", ind_acc, val_accumulated)
-        print("-----------------------------------------------------------")
-
-    except FileNotFoundError as e:
-        print(f"File Error: {e}")
-        print("Test skipped: Make sure the './input/' and './output/' folders exist and have the correct files.")
-    except Exception as e:
-        print(f"An error occurred during testing: {e}")
+    return interval_indices, encoded_values, quantized_values, sampled_errors

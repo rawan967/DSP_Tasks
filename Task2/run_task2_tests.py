@@ -16,6 +16,9 @@ from dsp_operations import (
 from Quantization.QuanTest1 import QuantizationTest1
 from Quantization.QuanTest2 import QuantizationTest2
 
+from dsp_operations import AccumulationSignal,SquaringSignal,NormalizeSignal,SubSignals
+from Task1Test import  SignalSamplesAreEqual
+
 ROOT = Path(__file__).resolve().parent
 QUANT = ROOT / "Quantization"
 ARITH_OUT = ROOT / "OUTPUT Arithmetic operations"
@@ -36,107 +39,68 @@ def run_quantization_tests():
         intervals2, encoded2, quantized2, errors2
     )
 
+    try:
 
-def read_reference(path):
-    indices, samples = [], []
-    with open(path, "r", encoding="utf-8") as file:
-        for _ in range(3):
-            next(file, None)
-        for line in file:
-            parts = line.split()
-            if len(parts) != 2:
-                continue
-            try:
-                indices.append(int(parts[0]))
-                samples.append(float(parts[1]))
-            except ValueError:
-                continue
-    return indices, samples
+        # -----------------------------------------------------------
+        #                        TASK 2 TESTS
+        # -----------------------------------------------------------
+        
+        # 1. Testing Subtraction
+        print("\nTesting Subtraction (Signal1 - Signal2):")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal2.txt')
+        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
+  
+        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal2.txt", ind_sub, val_sub)
+        print("-----------------------------------------------------------")
 
-
-def compare_signal(label, expected_path, indices, samples):
-    if not expected_path.exists():
-        print(f"SKIPPED {label}: reference file not found: {expected_path}")
-        return
-
-    expected_indices, expected_samples = read_reference(expected_path)
-
-    print(f"\nChecking: {label}")
-    print(f"Your samples count: {len(samples)}")
-    print(f"Expected samples count: {len(expected_samples)}")
-
-    if indices != expected_indices:
-        print("FAILED: Indices are different.")
-        print("Your first indices:", indices[:5])
-        print("Expected first indices:", expected_indices[:5])
-        return
-
-    if len(samples) != len(expected_samples):
-        print("FAILED: Different signal lengths.")
-        return
-
-    for i, (actual, expected) in enumerate(zip(samples, expected_samples)):
-        if abs(actual - expected) >= 0.01:
-            print(f"First mismatch at sample {i}:")
-            print(f"Your value:     {actual}")
-            print(f"Expected value: {expected}")
-            print(f"Absolute difference: {abs(actual - expected)}")
-            print("Your first 10 samples:", samples[:10])
-            print("Expected first 10 samples:", expected_samples[:10])
-            print("Expected absolute subtraction at this sample:",
-                  abs(actual))
-            return
-
-    print(f"PASSED {label}")
+        print("\nTesting Subtraction (Signal1 - Signal3):")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal3.txt')
+        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
+    
+        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal3.txt", ind_sub, val_sub)
+        print("-----------------------------------------------------------")
 
 
-def run_arithmetic_tests_if_available():
-    signal1 = TASK1_INPUT / "Signal1.txt"
-    signal2 = TASK1_INPUT / "Signal2.txt"
-    signal3 = TASK1_INPUT / "Signal3.txt"
+        # 2. Testing Squaring
+        print("\nTesting Squaring for Signal1:")
+        ind_sq, val_sq = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_squared = SquaringSignal(val_sq)
+       
+        SignalSamplesAreEqual("Squaring", "./OUTPUT Arithmetic operations/Output squaring signal 1.txt", ind_sq, val_squared)
+        print("-----------------------------------------------------------")
 
-    if not all(p.exists() for p in (signal1, signal2, signal3)):
-        print("\nArithmetic reference tests skipped: expected Task1/input/Signal1.txt, Signal2.txt and Signal3.txt were not found.")
-        print("This does not affect the Quantization tests above.")
-        return
+        # 3. Testing Normalization (0 to 1)
+        print("\nTesting Normalization (0 to 1) for Signal2:")
+        ind_n1, val_n1 = ReadSignalFileM('../Task1/input/Signal2.txt')
+        val_norm1 = NormalizeSignal(val_n1, "0_to_1")
+  
+        SignalSamplesAreEqual("Normalization (0 to 1)", "./OUTPUT Arithmetic operations/normlize signal 2 (from 0 to 1 )-- output.txt", ind_n1, val_norm1)
+        print("-----------------------------------------------------------")
 
-    idx1, val1 = ReadSignalFileM(str(signal1))
-    idx2, val2 = ReadSignalFileM(str(signal2))
-    idx3, val3 = ReadSignalFileM(str(signal3))
+        # 4. Testing Normalization (-1 to 1)
+        print("\nTesting Normalization (-1 to 1) for Signal1:")
+        ind_n2, val_n2 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_norm2 = NormalizeSignal(val_n2, "-1_to_1")
 
-    compare_signal(
-        "Subtraction Signal1 - Signal2",
-        ARITH_OUT / "signal1-signal2.txt",
-        *SubSignals([(idx1, val1), (idx2, val2)])
-    )
-    compare_signal(
-        "Subtraction Signal1 - Signal3",
-        ARITH_OUT / "signal1-signal3.txt",
-        *SubSignals([(idx1, val1), (idx3, val3)])
-    )
+        SignalSamplesAreEqual("Normalization (-1 to 1)", "./OUTPUT Arithmetic operations/normalize of signal 1 (from -1 to 1)-- output.txt", ind_n2, val_norm2)
+        print("-----------------------------------------------------------")
 
-    compare_signal(
-        "Squaring Signal1",
-        ARITH_OUT / "Output squaring signal 1.txt",
-        idx1, SquaringSignal(val1)
-    )
-    compare_signal(
-        "Normalization Signal2 (0 to 1)",
-        ARITH_OUT / "normlize signal 2 (from 0 to 1 )-- output.txt",
-        idx2, NormalizeSignal(val2, "0_to_1")
-    )
-    compare_signal(
-        "Normalization Signal1 (-1 to 1)",
-        ARITH_OUT / "normalize of signal 1 (from -1 to 1)-- output.txt",
-        idx1, NormalizeSignal(val1, "-1_to_1")
-    )
-    compare_signal(
-        "Accumulation Signal1",
-        ARITH_OUT / "output accumulation for signal1.txt",
-        idx1, AccumulationSignal(val1)
-    )
+        # 5. Testing Accumulation
+        print("\nTesting Accumulation for Signal1:")
+        ind_acc, val_acc = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_accumulated = AccumulationSignal(val_acc)
+  
+        SignalSamplesAreEqual("Accumulation", "./OUTPUT Arithmetic operations/output accumulation for signal1.txt", ind_acc, val_accumulated)
+        print("-----------------------------------------------------------")
 
+    except FileNotFoundError as e:
+        print(f"File Error: {e}")
+        print("Test skipped: Make sure the './input/' and './output/' folders exist and have the correct files.")
+    except Exception as e:
+        print(f"An error occurred during testing: {e}")
 
 if __name__ == "__main__":
     run_quantization_tests()
-    run_arithmetic_tests_if_available()
+    

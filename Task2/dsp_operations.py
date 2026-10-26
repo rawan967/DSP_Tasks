@@ -147,7 +147,7 @@ def Quantization(signal, num_bits=None, num_levels=None):
         zero_based_index = math.ceil((sample - minimum) / delta) - 1
         zero_based_index = max(0, min(zero_based_index, num_levels - 1))
 
-        quantized_value = minimum + (zero_based_index + 0.5) * delta
+        quantized_value = minimum + (zero_based_index + 0.5) * delta 
         encoded_value = format(zero_based_index, f"0{bits}b")
         error = quantized_value - sample
 
@@ -158,3 +158,113 @@ def Quantization(signal, num_bits=None, num_levels=None):
         sampled_errors.append(round(error, 4))
 
     return interval_indices, encoded_values, quantized_values, sampled_errors
+
+
+# =======================================================
+#                      Testing
+# =======================================================
+if __name__ == "__main__":
+    from Task1Test import ReadSignalFile, MultiplySignalByConst, AddSignalSamplesAreEqual, SignalSamplesAreEqual
+
+    from Quantization.QuanTest1 import QuantizationTest1        
+    from Quantization.QuanTest2 import QuantizationTest2
+
+    try:
+        print("Testing Addition For Signal1 and Signal2:")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal2.txt')
+
+        ind_add, val_add = AddSignals([(ind1, val1), (ind2, val2)])
+        AddSignalSamplesAreEqual('Signal1.txt', 'Signal2.txt', ind_add, val_add)
+
+        print("-----------------------------------------------------------")
+
+        print("Testing Addition For Signal1 and Signal3:")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal3.txt')
+
+        ind_add, val_add = AddSignals([(ind1, val1), (ind2, val2)])
+        AddSignalSamplesAreEqual('Signal1.txt', 'Signal3.txt', ind_add, val_add)
+
+        print("-----------------------------------------------------------")
+
+        print("\nTesting Multiplication by 5:")
+        ind_m, val_m = ReadSignalFileM('../Task1/input/Signal1.txt')
+
+        val_mul = MultiplySignal(val_m, 5) 
+        ind_mul = ind_m  
+        MultiplySignalByConst(5, ind_mul, val_mul)
+
+        print("-----------------------------------------------------------")
+
+        print("\nTesting Multiplication by 10:")
+        ind_m, val_m = ReadSignalFileM('../Task1/input/Signal2.txt')
+
+        val_mul = MultiplySignal(val_m, 10) 
+
+        ind_mul = ind_m  
+        MultiplySignalByConst(10, ind_mul, val_mul)
+        
+    except FileNotFoundError:
+        print("Test skipped: Run the GUI directly, or make sure the './input/' folder exists if you want to run this file alone.")
+
+
+        # -----------------------------------------------------------
+        #                        TASK 2 TESTS
+        # -----------------------------------------------------------
+        
+        # 1. Testing Subtraction
+        print("\nTesting Subtraction (Signal1 - Signal2):")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal2.txt')
+        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
+  
+        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal2.txt", ind_sub, val_sub)
+        print("-----------------------------------------------------------")
+
+        print("\nTesting Subtraction (Signal1 - Signal3):")
+        ind1, val1 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        ind2, val2 = ReadSignalFileM('../Task1/input/Signal3.txt')
+        ind_sub, val_sub = SubSignals([(ind1, val1), (ind2, val2)])
+    
+        SignalSamplesAreEqual("Subtraction", "./OUTPUT Arithmetic operations/signal1-signal3.txt", ind_sub, val_sub)
+        print("-----------------------------------------------------------")
+
+
+        # 2. Testing Squaring
+        print("\nTesting Squaring for Signal1:")
+        ind_sq, val_sq = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_squared = SquaringSignal(val_sq)
+       
+        SignalSamplesAreEqual("Squaring", "./OUTPUT Arithmetic operations/Output squaring signal 1.txt", ind_sq, val_squared)
+        print("-----------------------------------------------------------")
+
+        # 3. Testing Normalization (0 to 1)
+        print("\nTesting Normalization (0 to 1) for Signal1:")
+        ind_n1, val_n1 = ReadSignalFileM('../Task1/input/Signal2.txt')
+        val_norm1 = NormalizeSignal(val_n1, "0_to_1")
+  
+        SignalSamplesAreEqual("Normalization (0 to 1)", "./OUTPUT Arithmetic operations/normlize signal 2 (from 0 to 1 )-- output.txt", ind_n1, val_norm1)
+        print("-----------------------------------------------------------")
+
+        # 4. Testing Normalization (-1 to 1)
+        print("\nTesting Normalization (-1 to 1) for Signal1:")
+        ind_n2, val_n2 = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_norm2 = NormalizeSignal(val_n2, "-1_to_1")
+
+        SignalSamplesAreEqual("Normalization (-1 to 1)", "./OUTPUT Arithmetic operations/normalize of signal 1 (from -1 to 1)-- output.txt", ind_n2, val_norm2)
+        print("-----------------------------------------------------------")
+
+        # 5. Testing Accumulation
+        print("\nTesting Accumulation for Signal1:")
+        ind_acc, val_acc = ReadSignalFileM('../Task1/input/Signal1.txt')
+        val_accumulated = AccumulationSignal(val_acc)
+  
+        SignalSamplesAreEqual("Accumulation", "./OUTPUT Arithmetic operations/output accumulation for signal1.txt", ind_acc, val_accumulated)
+        print("-----------------------------------------------------------")
+
+    except FileNotFoundError as e:
+        print(f"File Error: {e}")
+        print("Test skipped: Make sure the './input/' and './output/' folders exist and have the correct files.")
+    except Exception as e:
+        print(f"An error occurred during testing: {e}")

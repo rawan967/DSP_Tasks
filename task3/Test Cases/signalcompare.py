@@ -1,4 +1,3 @@
-
 import math
 
 #Use to test the Amplitude of DFT and IDFT

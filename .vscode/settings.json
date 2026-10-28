@@ -1,5 +1,11 @@
 {
     "python.analysis.extraPaths": [
-        "./task3/Test Cases"
+        "./task3/Test Cases",
+        "./task 4/TestCases/Convolution",
+        "./task 4/TestCases/Derivative Updated",
+        "./task 4/TestCases/Shifting and Folding",
+        "./task4/TestCases/Convolution",
+        "./task4/TestCases/Derivative Updated",
+        "./task4/TestCases/Shifting and Folding"
     ]
 }

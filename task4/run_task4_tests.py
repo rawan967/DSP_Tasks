@@ -12,8 +12,6 @@ from CompareSignals import SignalsAreEqual
 from dsp_operations import (
     ReadSignalFileM,
     MovingAverage,
-    FirstDerivative,
-    SecondDerivative,
     ShiftSignal,
     FoldSignal,
     ShiftFoldedSignal,
